@@ -44,5 +44,6 @@ class BookResponse(BookBase):
     
     # Optional field to show distance when querying nearby books
     distance_meters: Optional[float] = None
+    already_read: Optional[bool] = False
     
     model_config = ConfigDict(from_attributes=True)

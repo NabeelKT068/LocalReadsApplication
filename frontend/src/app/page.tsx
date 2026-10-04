@@ -116,6 +116,13 @@ export default function Home() {
                      ) : (
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-20"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
                      )}
+                     
+                     {book.already_read && (
+                        <div className="absolute top-2 right-2 bg-green-600/90 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md backdrop-blur-sm shadow-sm flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                          Already Read
+                        </div>
+                     )}
                   </div>
                   <div className="flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-1">
@@ -133,7 +140,7 @@ export default function Home() {
                       onClick={(e) => { e.stopPropagation(); handleBorrow(book.id, book.title); }}
                       className="text-sm px-3 py-1.5 bg-black dark:bg-white text-white dark:text-black rounded-lg font-medium hover:opacity-80 transition-opacity"
                     >
-                      Borrow
+                      {book.already_read ? 'Borrow Again' : 'Borrow'}
                     </button>
                   </div>
                 </div>

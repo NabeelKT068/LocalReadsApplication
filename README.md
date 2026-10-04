@@ -50,3 +50,10 @@ npm run dev
 - Map UI for visually browsing nearby books.
 - Advanced late fee calculations and gamification (e.g., neighbor trust scores).
 - Dedicated Android App built with React Native (Expo) referencing the same FastAPI backend.
+
+### 📝 Pending / Work In Progress (Where we paused)
+We recently consolidated the project into a single monorepo format, resolved critical backend state/timezone bugs, and introduced some core UX features. Here is what is pending or could be improved next time:
+- **Notifications Enhancements:** Notifications are currently stored in `localStorage` in the browser. Moving notifications to the PostgreSQL database would allow them to sync across devices.
+- **WebSocket Reconnection:** Strengthen the chat WebSocket handling to gracefully reconnect if the connection drops.
+- **Push Notifications:** Explore browser Push API or Service Workers for offline notifications.
+- **Testing:** Add comprehensive unit/integration tests (pytest for backend, Jest/Cypress for frontend) to prevent regressions on the borrowing lifecycle state machine.

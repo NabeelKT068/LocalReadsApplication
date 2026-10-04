@@ -13,6 +13,7 @@ from app.api.deps import get_current_user
 from app.core.config import settings
 from app.models.user import User
 from app.models.book import Book, BookStatus
+from app.models.transaction import Transaction, TransactionStatus
 from app.schemas.book import BookCreate, BookResponse, BookUpdate
 
 router = APIRouter()
@@ -79,8 +80,17 @@ async def get_nearby_books(
     # ST_DistanceSphere returns distance in meters
     distance_col = func.ST_DistanceSphere(User.location, current_user.location).label("distance_meters")
     
+    already_read_subquery = (
+        select(1)
+        .where(Transaction.book_id == Book.id)
+        .where(Transaction.borrower_id == current_user.id)
+        .where(Transaction.status == TransactionStatus.RETURNED)
+        .exists()
+    )
+    already_read_col = already_read_subquery.label("already_read")
+    
     query = (
-        select(Book, distance_col)
+        select(Book, distance_col, already_read_col)
         .join(User, Book.owner_id == User.id)
         .where(Book.status == BookStatus.AVAILABLE)
         .where(User.id != current_user.id)
@@ -93,7 +103,7 @@ async def get_nearby_books(
     
     # Format the result to include distance_meters mapped back into the Pydantic model
     nearby_books = []
-    for book, distance in result.all():
+    for book, distance, already_read in result.all():
         book_dict = {
             "id": book.id,
             "owner_id": book.owner_id,
@@ -107,7 +117,8 @@ async def get_nearby_books(
             "condition": book.condition,
             "status": book.status,
             "created_at": book.created_at,
-            "distance_meters": round(distance, 1) if distance else None
+            "distance_meters": round(distance, 1) if distance else None,
+            "already_read": already_read
         }
         nearby_books.append(book_dict)
         

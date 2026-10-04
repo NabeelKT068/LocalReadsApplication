@@ -45,8 +45,14 @@ async def create_request(
     
     db.add(tx)
     await db.commit()
-    await db.refresh(tx)
-    return tx
+    
+    query = select(Transaction).options(
+        selectinload(Transaction.book),
+        selectinload(Transaction.borrower),
+        selectinload(Transaction.lender)
+    ).where(Transaction.id == tx.id)
+    result = await db.execute(query)
+    return result.scalars().first()
 
 @router.get("/", response_model=List[TransactionResponse])
 async def get_my_transactions(
@@ -73,7 +79,12 @@ async def approve_request(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    result = await db.execute(select(Transaction).where(Transaction.id == id))
+    query = select(Transaction).options(
+        selectinload(Transaction.book),
+        selectinload(Transaction.borrower),
+        selectinload(Transaction.lender)
+    ).where(Transaction.id == id)
+    result = await db.execute(query)
     tx = result.scalars().first()
     
     if not tx:
@@ -97,7 +108,12 @@ async def reject_request(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    result = await db.execute(select(Transaction).where(Transaction.id == id))
+    query = select(Transaction).options(
+        selectinload(Transaction.book),
+        selectinload(Transaction.borrower),
+        selectinload(Transaction.lender)
+    ).where(Transaction.id == id)
+    result = await db.execute(query)
     tx = result.scalars().first()
     
     if not tx or tx.lender_id != current_user.id:
@@ -117,7 +133,12 @@ async def confirm_handover(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    result = await db.execute(select(Transaction).where(Transaction.id == id))
+    query = select(Transaction).options(
+        selectinload(Transaction.book),
+        selectinload(Transaction.borrower),
+        selectinload(Transaction.lender)
+    ).where(Transaction.id == id)
+    result = await db.execute(query)
     tx = result.scalars().first()
     
     if not tx or (tx.lender_id != current_user.id and tx.borrower_id != current_user.id):
@@ -151,7 +172,12 @@ async def confirm_return(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    result = await db.execute(select(Transaction).where(Transaction.id == id))
+    query = select(Transaction).options(
+        selectinload(Transaction.book),
+        selectinload(Transaction.borrower),
+        selectinload(Transaction.lender)
+    ).where(Transaction.id == id)
+    result = await db.execute(query)
     tx = result.scalars().first()
     
     # Only lender can confirm final return
@@ -164,8 +190,9 @@ async def confirm_return(
     tx.actual_return_date = datetime.utcnow()
     
     # Check late fee
-    if tx.actual_return_date > tx.expected_return_date:
-        delta = tx.actual_return_date - tx.expected_return_date
+    expected_naive = tx.expected_return_date.replace(tzinfo=None) if tx.expected_return_date else None
+    if expected_naive and tx.actual_return_date > expected_naive:
+        delta = tx.actual_return_date - expected_naive
         tx.late_fee = delta.days * settings.LATE_FEE_PER_DAY
     
     book_result = await db.execute(select(Book).where(Book.id == tx.book_id))
